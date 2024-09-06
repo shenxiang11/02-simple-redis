@@ -1,12 +1,12 @@
 mod hmap;
 mod map;
 mod echo;
+mod set;
 
 use crate::{Backend, RespArray, RespError, RespFrame, SimpleString};
 use enum_dispatch::enum_dispatch;
 use lazy_static::lazy_static;
 use thiserror::Error;
-use tracing::info;
 
 // you could also use once_cell instead of lazy_static
 lazy_static! {
@@ -42,6 +42,7 @@ pub enum Command {
 
     Echo(Echo),
     HMGet(HMGet),
+    SAdd(SAdd),
 
     // unrecognized command
     Unrecognized(Unrecognized),
@@ -56,6 +57,12 @@ pub struct Echo {
 pub struct HMGet {
     key: String,
     fields: Vec<String>,
+}
+
+#[derive(Debug)]
+pub struct SAdd {
+    key: String,
+    members: Vec<String>,
 }
 
 #[derive(Debug)]
@@ -115,6 +122,7 @@ impl TryFrom<RespArray> for Command {
                 b"hgetall" => Ok(HGetAll::try_from(v)?.into()),
                 b"echo" => Ok(Echo::try_from(v)?.into()),
                 b"hmget" => Ok(HMGet::try_from(v)?.into()),
+                b"sadd" => Ok(SAdd::try_from(v)?.into()),
                 _ => Ok(Unrecognized.into()),
             },
             _ => Err(CommandError::InvalidCommand(
