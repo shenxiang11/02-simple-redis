@@ -24,6 +24,7 @@ tokio-util = { version = "0.7.10", features = ["codec"] }
 tracing = "0.1.40"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
 winnow = { version = "0.6.8", features = ["simd"] }
+log = "0.4.21"
 
 [dev-dependencies]
 criterion = { version = "0.5.1", features = ["html_reports"] }

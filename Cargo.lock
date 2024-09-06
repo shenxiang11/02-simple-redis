@@ -716,6 +716,7 @@ dependencies = [
  "enum_dispatch",
  "futures",
  "lazy_static",
+ "log",
  "thiserror",
  "tokio",
  "tokio-stream",
