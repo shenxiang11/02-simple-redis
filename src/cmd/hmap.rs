@@ -1,4 +1,4 @@
-use super::{extract_args, validate_command, CommandExecutor, HGet, HGetAll, HSet, RESP_OK};
+use super::{extract_args, validate_command, CommandExecutor, HGet, HGetAll, HSet, RESP_OK, HMGet};
 use crate::{cmd::CommandError, BulkString, RespArray, RespFrame};
 
 impl CommandExecutor for HGet {
@@ -43,6 +43,29 @@ impl CommandExecutor for HSet {
     }
 }
 
+impl CommandExecutor for HMGet {
+    fn execute(self, backend: &crate::Backend) -> RespFrame {
+        let hmap = backend.hmap.get(&self.key);
+
+        match hmap {
+            Some(hmap) => {
+                let mut data = Vec::with_capacity(self.fields.len());
+                for field in self.fields.iter() {
+                    if let Some(value) = hmap.get(field) {
+                        data.push(value.value().clone());
+                    } else {
+                        data.push(RespFrame::Null(crate::RespNull));
+                    }
+                }
+
+                RespArray::new(data).into()
+            }
+            None => RespArray::new([]).into(),
+        }
+    }
+
+}
+
 impl TryFrom<RespArray> for HGet {
     type Error = CommandError;
     fn try_from(value: RespArray) -> Result<Self, Self::Error> {
@@ -74,6 +97,31 @@ impl TryFrom<RespArray> for HGetAll {
             }),
             _ => Err(CommandError::InvalidArgument("Invalid key".to_string())),
         }
+    }
+}
+
+impl TryFrom<RespArray> for HMGet {
+    type Error = CommandError;
+
+    fn try_from(value: RespArray) -> Result<Self, Self::Error> {
+        let mut args = extract_args(value, 1)?.into_iter();
+
+        let key = match args.next() {
+            Some(RespFrame::BulkString(key)) => String::from_utf8(key.0)?,
+            _ => return Err(CommandError::InvalidArgument("Invalid key".to_string())),
+        };
+
+        let fields = args.map(|arg| {
+            match arg {
+                RespFrame::BulkString(field) => Ok(String::from_utf8(field.0)?),
+                _ => Err(CommandError::InvalidArgument("Invalid field".to_string())),
+            }
+        }).collect::<Result<Vec<String>, CommandError>>()?;
+
+        Ok(HMGet {
+            key,
+            fields,
+        })
     }
 }
 
