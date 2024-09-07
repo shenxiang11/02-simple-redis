@@ -1,10 +1,12 @@
 use crate::cmd::{CommandError, CommandExecutor, extract_args, SAdd, SIsMember, SMembers, validate_command};
-use crate::{Backend, RespArray, RespFrame, SimpleString};
+use crate::{Backend, RespArray, RespFrame};
+use crate::RespFrame::Integer;
 
 impl CommandExecutor for SAdd {
     fn execute(self, backend: &Backend) -> RespFrame {
         let count = backend.sadd(self.key, self.members);
-        SimpleString::new(count.to_string()).into()
+
+        Integer(count as i64)
     }
 }
 
@@ -38,9 +40,9 @@ impl CommandExecutor for SIsMember {
         let res = backend.sismember(self.key, self.member);
 
         if res {
-            SimpleString::new("1").into()
+            Integer(1)
         } else {
-            SimpleString::new("0").into()
+            Integer(0)
         }
     }
 }
