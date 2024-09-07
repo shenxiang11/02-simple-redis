@@ -72,4 +72,12 @@ impl Backend {
             .filter(|member| set.insert(member.to_string()))
             .count()
     }
+
+    pub fn sismember(&self, key: String, member: String) -> bool {
+        self.set.get(&key).map_or(false, |v| v.contains(&member))
+    }
+
+    pub fn smembers(&self, key: String) -> Option<DashSet<String>> {
+        self.set.get(&key).map(|v| v.clone())
+    }
 }

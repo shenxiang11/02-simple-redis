@@ -43,6 +43,8 @@ pub enum Command {
     Echo(Echo),
     HMGet(HMGet),
     SAdd(SAdd),
+    SIsMember(SIsMember),
+    SMembers(SMembers),
 
     // unrecognized command
     Unrecognized(Unrecognized),
@@ -63,6 +65,17 @@ pub struct HMGet {
 pub struct SAdd {
     key: String,
     members: Vec<String>,
+}
+
+#[derive(Debug)]
+pub struct SIsMember {
+    key: String,
+    member: String,
+}
+
+#[derive(Debug)]
+pub struct SMembers {
+    key: String,
 }
 
 #[derive(Debug)]
@@ -123,6 +136,8 @@ impl TryFrom<RespArray> for Command {
                 b"echo" => Ok(Echo::try_from(v)?.into()),
                 b"hmget" => Ok(HMGet::try_from(v)?.into()),
                 b"sadd" => Ok(SAdd::try_from(v)?.into()),
+                b"sismember" => Ok(SIsMember::try_from(v)?.into()),
+                b"smembers" => Ok(SMembers::try_from(v)?.into()),
                 _ => Ok(Unrecognized.into()),
             },
             _ => Err(CommandError::InvalidCommand(

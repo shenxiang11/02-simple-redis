@@ -1,8 +1,8 @@
-use crate::cmd::{CommandError, CommandExecutor, extract_args, SAdd};
-use crate::{RespArray, RespFrame, SimpleString};
+use crate::cmd::{CommandError, CommandExecutor, extract_args, HGet, SAdd, SIsMember, SMembers, validate_command};
+use crate::{Backend, RespArray, RespFrame, SimpleString};
 
 impl CommandExecutor for SAdd {
-    fn execute(self, backend: &crate::Backend) -> RespFrame {
+    fn execute(self, backend: &Backend) -> RespFrame {
         let count = backend.sadd(self.key, self.members);
         SimpleString::new(count.to_string()).into()
     }
@@ -30,6 +30,49 @@ impl TryFrom<RespArray> for SAdd {
             key,
             members,
         })
+    }
+}
+
+impl CommandExecutor for SIsMember {
+    fn execute(self, backend: &Backend) -> RespFrame {
+        let res = backend.sismember(self.key, self.member);
+
+        if res {
+            SimpleString::new("1").into()
+        } else {
+            SimpleString::new("0").into()
+        }
+    }
+}
+
+impl TryFrom<RespArray> for SIsMember{
+    type Error = CommandError;
+
+    fn try_from(value: RespArray) -> Result<Self, Self::Error> {
+        validate_command(&value, &["sismember"], 2)?;
+
+        let mut args = extract_args(value, 1)?.into_iter();
+        match (args.next(), args.next()) {
+            (Some(RespFrame::BulkString(key)), Some(RespFrame::BulkString(member)) ) => Ok(SIsMember {
+                key: String::from_utf8(key.0)?,
+                member: String::from_utf8(member.0)?,
+            }),
+            _ => Err(CommandError::InvalidArgument("Invalid key or member".to_string())),
+        }
+    }
+}
+
+impl CommandExecutor for SMembers {
+    fn execute(self, backend: &Backend) -> RespFrame {
+        todo!()
+    }
+}
+
+impl TryFrom<RespArray> for SMembers {
+    type Error = CommandError;
+
+    fn try_from(value: RespArray) -> Result<Self, Self::Error> {
+        todo!()
     }
 }
 
