@@ -1,4 +1,4 @@
-use crate::cmd::{CommandError, CommandExecutor, extract_args, HGet, SAdd, SIsMember, SMembers, validate_command};
+use crate::cmd::{CommandError, CommandExecutor, extract_args, SAdd, SIsMember, SMembers, validate_command};
 use crate::{Backend, RespArray, RespFrame, SimpleString};
 
 impl CommandExecutor for SAdd {
@@ -64,7 +64,15 @@ impl TryFrom<RespArray> for SIsMember{
 
 impl CommandExecutor for SMembers {
     fn execute(self, backend: &Backend) -> RespFrame {
-        todo!()
+        let members = backend.smembers(self.key);
+
+        let mut data = Vec::new();
+
+        for member in members {
+            data.push(RespFrame::BulkString(member.into()));
+        }
+
+        RespArray::new(data).into()
     }
 }
 
@@ -72,7 +80,18 @@ impl TryFrom<RespArray> for SMembers {
     type Error = CommandError;
 
     fn try_from(value: RespArray) -> Result<Self, Self::Error> {
-        todo!()
+        validate_command(&value, &["smembers"], 1)?;
+
+        let mut args = extract_args(value, 1)?.into_iter();
+
+        let key = match args.next() {
+            Some(RespFrame::BulkString(key)) => String::from_utf8(key.0)?,
+            _ => return Err(CommandError::InvalidArgument("Invalid key".to_string())),
+        };
+
+        Ok(SMembers {
+            key,
+        })
     }
 }
 

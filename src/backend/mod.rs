@@ -77,7 +77,7 @@ impl Backend {
         self.set.get(&key).map_or(false, |v| v.contains(&member))
     }
 
-    pub fn smembers(&self, key: String) -> Option<DashSet<String>> {
-        self.set.get(&key).map(|v| v.clone())
+    pub fn smembers(&self, key: String) -> Vec<String> {
+        self.set.get(&key).map_or_else(Vec::new, |v| v.iter().map(|v| v.clone()).collect())
     }
 }
